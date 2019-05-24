@@ -1,0 +1,67 @@
+#!/bin/bash
+######################git 下载代码脚本##################
+Git_DownLoad_Code(){
+   # 使用的软件名称(这个不能修改)
+   local Soft_Name='git'
+
+   # 判断初始化文件中Git对应的必填信息是否存在
+   [ "${Git_UserName}" == '' ] && exit 2
+   [ "${Git_PassWord}" == '' ] && exit 2
+   [ "${Git_Url}" == '' ] && exit 2
+   [ "${Git_Owner}" == '' ] && exit 2
+   [ "${Git_ProjectName}" == '' ] && exit 2
+   [ "${Git_BranchName}" == '' ] && exit 2
+
+   # git 仓库地址
+   local GitCode_Url="http://${Git_UserName}:${Git_PassWord}@${Git_Url}/${Git_Owner}/${Git_ProjectName}.git"
+
+   # 判断下载代码用的工具git是否安装，如果没有就安装
+   local Git_Num=`rpm -qa ${Soft_Name}|wc -l`
+   if [ "${Git_Num}" -lt 1 ];then
+      yum install -y ${Soft_Name}
+   fi 
+   # 判断状态文件内容
+   if [ `cat ${Status_Dir_Default}/${Git_Code_Status_FileName_Default}` -eq 1 ];then
+         echo "Git Download Code Failed on the Last time !!!"
+   fi 
+   # 写状态文件
+   echo '1' >${Status_Dir_Default}/${Git_Code_Status_FileName_Default}
+
+   # 判断代码目录是否存在，如果不存在就克隆线上仓库，存在就直接拉取代码
+   # 项目名称要跟域名一致（这样做的目的是为了方便管理）
+   # 这里默认的代码保存在以项目名称命名的目录中
+   if [ ! -d ${Git_Code_Dir_Default}/${Git_ProjectName} ];then
+      cd ${Git_Code_Dir_Default}
+      git clone ${GitCode_Url}
+      echo '0' >${Status_Dir_Default}/${Git_Code_Status_FileName_Default}
+      echo "Git clone ${Git_ProjectName} is successfull"  >>${Log_Dir_Default}/${Messages_Name_Default}
+      
+   else
+      cd ${Git_Code_Dir_Default}/${Git_ProjectName}
+      git checkout ${Git_BranchName}
+      git pull
+      echo '0' >${Status_Dir_Default}/${Git_Code_Status_FileName_Default}
+      echo "Git pull ${Git_ProjectName} is successfull" >>${Log_Dir_Default}/${Messages_Name_Default}
+   fi
+
+   # 判断状态文件内容
+   if [ `cat ${Status_Dir_Default}/${Copy_Status_FileName_Default}` == 1 ];then
+         echo "Copy Code Failed on the Last time !!!"
+   fi
+   # 写状态文件
+   echo '1' >${Status_Dir_Default}/${Copy_Status_FileName_Default}
+
+   # 判断temp目录是否存在文件，如果有就清空
+   local Temp_File_num=`ls -l ${Temp_Dir_Default}|wc -l`
+   if [ "${Temp_File_num}" -gt 1 ];then
+      rm -rf ${Temp_Dir_Default}/* >/dev/null 2>&1
+   fi
+
+   # 拷贝下载的代码到temp目录
+   cp -R ${Git_Code_Dir_Default}/${Git_ProjectName}/* ${Temp_Dir_Default}/
+
+   # 写状态文件和日志文件，并打印屏幕信息
+   echo '0' >${Status_Dir_Default}/${Copy_Status_FileName_Default}
+   echo "copy ${Git_ProjectName} is successfull to Temp Directory!!!" >>${Log_Dir_Default}/${Messages_Name_Default}
+   echo "copy ${Git_ProjectName} is successfull to Temp Directory!!!"
+}

@@ -1,0 +1,37 @@
+#!/bin/bash
+# 备份代码
+BackUp_Code () {
+# 判断temp目录是否有文件，如果有就清空
+  local File_Num=`ls -l ${Temp_Dir_Default}|wc -l` 
+  [ "${File_Num}" -gt 1 ] && rm -rf ${Temp_Dir_Default}/* >/dev/null 2>&1
+  # 判断线上服务器的地址是否正确，如果是空或者zero就报错退出
+  if [ "${Rsync_Server_Ip_Default}" == '' ];then
+     echo "Rsync Server Ip ${Rsync_Server_Ip_Default} Error,Please Enter Legal Address!!! " >>${Log_Dir_Default}/${Error_Name_Default}
+     echo "Rsync Server Ip ${Rsync_Server_Ip_Default} Error,Please Enter Legal Address!!! " 
+     exit 2
+  fi
+
+  if [ "${Rsync_Server_Ip_Default}" == 'zero' ];then
+     echo "Rsync Server Ip ${Rsync_Server_Ip_Default} Error,Please Enter Legal Address!!! " >>${Log_Dir_Default}/${Error_Name_Default}
+     echo "Rsync Server Ip ${Rsync_Server_Ip_Default} Error,Please Enter Legal Address!!! " 
+     exit 2
+  fi
+  # 判断，如果状态文件中值是0 就是正常，如果是1 代表上次操作没有做完就终止了
+  if [ `cat ${Status_Dir_Default}/${Recover_Status_FileName_Default}` -eq 1 ];then
+     echo "BackUp Failed on the Last time!!!" 
+     sleep 1
+  fi
+  # 写状态文件
+  echo "1" >${Status_Dir_Default}/${BackUp_Status_FileName_Default}
+  # 备份线上代码到temp目录
+  rsync -avz --bwlimit=${Rsync_Limit_Speed_Default} ${Rsync_Virt_User_Name_Default}@${Rsync_Server_Ip_Default}::${Rsync_Module_Name_Default}/ ${Temp_Dir_Default}/ --password-file=${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default}
+  # 打包temp目录所有文件到backup-old-code目录
+  cd ${Temp_Dir_Default}
+  tar cf $BackUp_Dir_Default/${Rsync_Server_Ip_Default}-${TIME}.tar.gz ./*
+  # 清空temp目录
+  rm -rf ${Temp_Dir_Default}/* >/dev/null 2>&1
+  echo "${TIME} BackUp_Code  is install successful!!!" >>${Log_Dir_Default}/${Messages_Name_Default}
+  echo "0" >${Status_Dir_Default}/${BackUp_Status_FileName_Default}
+  echo "${TIME} BackUp_Code  is install successful!!!"
+}
+

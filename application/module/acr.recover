@@ -1,0 +1,44 @@
+#!/bin/bash
+# 回滚代码
+ReCover(){
+  ## 查看BackUp目录下有没有文件
+  local File_Num=`ls -l ${BackUp_Dir_Default}|wc -l`
+  if [ "$File_Num" -gt 1 ];then
+  ## 获取文件的方式是通过时间戳的方式，取得最近上传的文件
+     local File_Name=`ls -lrt ${BackUp_Dir_Default}|grep 'tar.gz'|awk 'END{print $9}'`
+     cd ${BackUp_Dir_Default}
+     # 对BackUp目录和Temp目录进行授权，方便操作
+     chown -R root.root ${BackUp_Dir_Default}
+     chown -R root.root ${Temp_Dir_Default}
+     # 判断，如果状态文件中值是0 就是正常，如果是1 代表上次操作没有做完就终止了
+     if [ `cat ${Status_Dir_Default}/${Recover_Status_FileName_Default}` -eq 1 ];then     
+        echo "Recover Failed on the Last time!!!" 
+        sleep 1
+     fi
+     # 往状态文件中写入一个初始值
+     echo "1" >${Status_Dir_Default}/${Recover_Status_FileName_Default}
+     # 清空临时目录
+     rm -rf ${Temp_Dir_Default}/* >/dev/null 2>&1
+     # 解压代码到临时目录
+     tar xf ${File_Name} -C ${Temp_Dir_Default}/
+     echo "${TIME} ${File_Name} Unzip  is successful!!!" >>${Log_Dir_Default}/${Messages_Name_Default}
+     echo "${TIME} ${File_Name} Unzip  is successful!!!"
+     cd ${Temp_Dir_Default}
+     
+     
+     # 强制远程代码和本地一致
+     rsync -avz --bwlimit=${Rsync_Limit_Speed_Default} --delete-excluded ${Temp_Dir_Default}/ ${Rsync_Virt_User_Name_Default}@${Rsync_Server_Ip_Default}::${Rsync_Module_Name_Default}/ --password-file=${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default}
+     
+
+     # 清空临时目录
+     rm -rf ${Temp_Dir_Default}/* >/dev/null 2>&1
+     echo "${Rsync_Server_Ip_Default}  ${TIME} ReCover is successful!!!"  >>${Log_Dir_Default}/${Messages_Name_Default}
+     # 往状态文件中写入值
+     echo "0" >${Status_Dir_Default}/${Recover_Status_FileName_Default}
+     echo "${Rsync_Server_Ip_Default} ${TIME} ReCover is successful!!!"
+  else
+     echo "${TIME} BackUp-code is not exists!!" >>${Log_Dir_Default}/${Error_Name_Default}
+     echo "${TIME} BackUp-code is not exists!!"
+     exit 2
+  fi
+}

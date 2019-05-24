@@ -1,0 +1,190 @@
+#!/bin/bash
+## 初始化程序
+## 根据配置文件创建必要的目录和文件
+InIt(){
+    
+#################################################################
+    #获取时间戳
+    TIME=`/usr/bin/date +%Y-%m-%d-%H-%M-%S`
+
+################## 目录名称及路径定义 ##############################
+    # Git 拉取代码存放目录
+    Git_Code_Dir_Default=${Git_Code_Dir:='/acr/download-code/git-code'}
+
+    # Tar 压缩包直接拷贝的目录
+    Tar_Code_Dir_Default=${Tar_Code_Dir:='/acr/download-code/tar-code'}
+
+    # Svn 拉取代码存放目录
+    Svn_Code_Dir_Default=${Svn_Code_Dir:='/acr/download-code/svn-code'}
+
+    # 备份代码目录
+    BackUp_Dir_Default=${BackUp_Dir:='/acr/backup-old-code'}
+    
+    # 程序运行过程中操作状态文件目录
+    Status_Dir_Default=${Status_Dir:='/acr/application/status'}
+
+    # 操作日志文件保存目录
+    Log_Dir_Default=${Log_Dir:='/acr/log'}
+
+    # 临时文件存放目录
+    Temp_Dir_Default=${Temp_Dir:='/acr/temp'}
+    
+###################### 文件名称定义 #############################
+    ## Log 文件定义
+    # messages.log
+    Messages_Name_Default=${Messages_Name:='messages.log'}
+    # error.log
+    Error_Name_Default=${Error_Name:='error.log'}
+
+    ## Status 文件定义
+    # Git-Code-Status
+    Git_Code_Status_FileName_Default=${Git_Code_Status_FileName:='Git-Code-Status'}
+
+    # Svn-Code-Status
+    Svn_Code_Status_FileName_Default=${Svn_Code_Status_FileName:='Svn-Code-Status'}
+
+    # Tar-Code-Status
+    Tar_Code_Status_FileName_Default=${Tar_Code_Status_FileName:='Tar-Code-Status'}    
+
+    # Copy-Status
+    Copy_Status_FileName_Default=${Copy_Status_FileName:='Copy-Status'}    
+
+    # BackUp-Status
+    BackUp_Status_FileName_Default=${BackUp_Status_FileName:='BackUp-Status'}
+
+    # New-Code-Status
+    New_Code_Status_FileName_Default=${New_Code_Status_FileName:='New-Code-Status'}
+
+    # Unzip-Status
+    Unzip_Status_FileName_Default=${Unzip_Status_FileName:='Unzip-Status'}
+
+    # Recover-Status
+    Recover_Status_FileName_Default=${Recover_Status_FileName:='Recover-Status'}
+
+############# 判断目录、文件是否存在，如不存在直接创建 ##########
+
+    ################## 判断下载代码相关内容 ####################
+    # Git目录
+    [ -d "${Git_Code_Dir_Default}" ] || mkdir -p ${Git_Code_Dir_Default}
+
+    # Tar目录
+    [ -d "${Tar_Code_Dir_Default}" ] || mkdir -p ${Tar_Code_Dir_Default}
+
+    # Svn目录
+    [ -d "${Svn_Code_Dir_Default}" ] || mkdir -p ${Svn_Code_Dir_Default}     
+    
+    ################### 判断备份代码相关内容 ####################
+    # BackUp目录
+    [ -d "${BackUp_Dir_Default}" ]||mkdir -p ${BackUp_Dir_Default}
+
+    ########### 判断程序运行过程中操作状态相关内容 ##############
+    # Status目录
+    [ -d "${Status_Dir_Default}" ]||mkdir -p ${Status_Dir_Default}
+
+    # Status目录里Git-Code-Status文件
+    if [ ! -f "${Status_Dir_Default}/${Git_Code_Status_FileName_Default}" ];then
+       touch ${Status_Dir_Default}/${Git_Code_Status_FileName_Default}
+       echo '0' >${Status_Dir_Default}/${Git_Code_Status_FileName_Default}
+    fi
+
+    # Status目录里Svn-Code-Status文件
+    if [ ! -f "${Status_Dir_Default}/${Svn_Code_Status_FileName_Default}" ];then
+       touch ${Status_Dir_Default}/${Svn_Code_Status_FileName_Default}
+       echo '0' >${Status_Dir_Default}/${Svn_Code_Status_FileName_Default}
+    fi
+
+    # Status目录里Tar-Code-Status文件
+    if [ ! -f "${Status_Dir_Default}/${Tar_Code_Status_FileName_Default}" ];then
+       touch ${Status_Dir_Default}/${Tar_Code_Status_FileName_Default}
+       echo '0' >${Status_Dir_Default}/${Tar_Code_Status_FileName_Default}
+    fi
+
+    # Status目录里Copy-Status文件
+   if [ ! -f "${Status_Dir_Default}/${Copy_Status_FileName_Default}" ];then
+      touch ${Status_Dir_Default}/${Copy_Status_FileName_Default}
+      echo '0' >${Status_Dir_Default}/${Copy_Status_FileName_Default}
+   fi
+
+    # Status目录里BackUp-Status文件
+   if [ ! -f "${Status_Dir_Default}/${BackUp_Status_FileName_Default}" ];then
+      touch ${Status_Dir_Default}/${BackUp_Status_FileName_Default}
+      echo '0' >${Status_Dir_Default}/${BackUp_Status_FileName_Default}
+   fi
+
+    # Status目录里Unzip-Status文件
+   if [ ! -f "${Status_Dir_Default}/${Unzip_Status_FileName_Default}" ];then
+      touch ${Status_Dir_Default}/${Unzip_Status_FileName_Default}
+      echo '0' >${Status_Dir_Default}/${Unzip_Status_FileName_Default}
+   fi
+
+    # Status目录里Recover-Status文件
+   if [ ! -f "${Status_Dir_Default}/${Recover_Status_FileName_Default}" ];then
+      touch ${Status_Dir_Default}/${Recover_Status_FileName_Default}
+      echo '0' >${Status_Dir_Default}/${Recover_Status_FileName_Default}
+   fi
+
+######################## 判断log相关内容 ##############################
+    # Log目录
+    [ -d "${Log_Dir_Default}" ] || mkdir -p ${Log_Dir_Default}
+
+    # Log目录下文件messages.log
+    [ -f "${Log_Dir_Default}/${Messages_Name_Default}" ] || touch ${Log_Dir_Default}/${Messages_Name_Default}
+
+    # Log目录下文件error.log
+    [ -f "${Log_Dir_Default}/${Error_Name_Default}" ] || touch ${Log_Dir_Default}/${Error_Name_Default}
+
+####################### 判断临时文件相关内容 #########################
+    # Temp目录
+    [ -d "${Temp_Dir_Default}" ]||mkdir -p ${Temp_Dir_Default}
+
+###################### rsync 相关初始化参数 ################################
+    ########## rsync 服务器端的内容 #########
+    # 虚拟用户名
+    Rsync_Virt_User_Name_Default=${Rsync_Virt_User_Name:='rsync_taagoo'}
+    
+    # 虚拟用户密码
+    Rsync_Virt_User_Passwd_Default=${Rsync_Virt_User_Passwd:='taagoo123'}
+    
+    # 模块名称
+    Rsync_Module_Name_Default=${Rsync_Module_Name:='update'}
+    
+    # 服务器地址
+    Rsync_Server_Ip_Default=${Rsync_Server_Ip:='zero'}
+    
+    ########## rsync 客户端的内容 ###########
+    # 认证文件名称
+    Rsync_Auth_File_Name_Default=${Rsync_Auth_File_Name:='taagoo'}
+    
+    # 认证文件所在目录
+    Rsync_Auth_File_Dir_Default=${Rsync_Auth_File_Dir:='/acr/passwd'}
+    
+    # 创建认证文件目录
+    [ -d "${Rsync_Auth_File_Dir_Default}" ] || mkdir -p ${Rsync_Auth_File_Dir_Default}
+    
+    # 创建认证文件，并修改权限
+    if [ ! -f "${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default}" ];then
+       touch ${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default}
+       echo "${Rsync_Virt_User_Passwd_Default}" >${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default}
+       chmod 600 ${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default}
+    else
+       echo "${Rsync_Virt_User_Passwd_Default}" >${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default}
+       chmod 600 ${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default}
+    fi
+    
+    # 传输速度限制
+    Rsync_Limit_Speed_Default=${Rsync_Limit_Speed:='1024'}
+
+############### 必须要有的目录，没有报错退出程序 #################
+    # bin目录
+    if [ ! -d '/acr/application/bin' ];then
+       echo '"/acr/application/bin" Error: Directory is not exists. Application Initialization Failed!!' >>${Log_Dir_Default}/${Error_Name_Default}
+        echo '"/acr/application/bin" Error: Directory is not exists. Application Initialization Failed!!'
+       exit 2
+    fi
+    # module目录
+    if [ ! -d '/acr/application/module' ];then
+       echo '"/acr/application/module" Error: Directory is not exists. Application Initialization Failed!!' >>${Log_Dir_Default}/${Error_Name_Default}
+       echo '"/acr/application/module" Error: Directory is not exists. Application Initialization Failed!!'
+       exit 2
+    fi
+}

@@ -1,0 +1,54 @@
+#!/bin/bash
+New_Code () {
+  ## 查看Temp目录下有没有文件
+  local File_Num=`ls -l ${Temp_Dir_Default}|wc -l`
+  if [ "${File_Num}" -gt 1 ];then
+     cd ${Temp_Dir_Default}
+     chown -R root.root ${Temp_Dir_Default}
+
+     # 判断线上服务器的地址是否正确，如果是空或者zero就报错退出
+     if [ "${Rsync_Server_Ip_Default}" == '' ];then
+        echo "Rsync Server Ip ${Rsync_Server_Ip_Default} Error,Please Enter Legal Address!!! " >>${Log_Dir_Default}/${Error_Name_Default}
+        echo "Rsync Server Ip ${Rsync_Server_Ip_Default} Error,Please Enter Legal Address!!! " 
+        exit 2
+     fi
+
+     if [ "${Rsync_Server_Ip_Default}" == 'zero' ];then
+        echo "Rsync Server Ip ${Rsync_Server_Ip_Default} Error,Please Enter Legal Address!!! " >>${Log_Dir_Default}/${Error_Name_Default}
+        echo "Rsync Server Ip ${Rsync_Server_Ip_Default} Error,Please Enter Legal Address!!! " 
+        exit 2
+     fi
+
+     # 判断状态文件内容
+     if [ `cat ${Status_Dir_Default}/${New_Code_Status_FileName_Default}` -eq 1 ];then
+        echo "New_Code Failed on the Last time!!!" 
+        sleep 1
+     fi
+
+     # 写状态文件
+     echo "1" >${Status_Dir_Default}/${New_Code_Status_FileName_Default}
+     
+     # 临时关闭命令结果是非零值的判断
+     # 这么设置的原因是，rsync文件传送成功也会报一个错误，导致程序终止
+     # 错误是：rsync error: some files/attrs were not transferred (see previous errors) (code 23) at main.c(1178) [sender=3.1.2]
+     set +e
+
+     # 上传代码
+     rsync -avz --bwlimit=${Rsync_Limit_Speed_Default} ${Temp_Dir_Default}/ ${Rsync_Virt_User_Name_Default}@${Rsync_Server_Ip_Default}::${Rsync_Module_Name_Default}/ --password-file=${Rsync_Auth_File_Dir_Default}/${Rsync_Auth_File_Name_Default} 
+     # 打开命令结果非零值的判断
+     set -e
+   
+     # 清空temp目录
+     rm -rf ${Temp_Dir_Default}/* >/dev/null 2>&1
+
+     # 写日志和状态文件，打印屏幕提示
+     echo "${TIME} New_Code  is install successful!!!" >>${Log_Dir_Default}/${Messages_Name_Default}
+     echo "0" >${Status_Dir_Default}/${New_Code_Status_FileName_Default}
+     echo "${TIME} New_Code is install successful!!!"
+  else
+     # 打印屏幕提示退出
+     echo "${TIME} New_Code Error: new code is not exists!!" >>${Log_Dir_Default}/${Error_Name_Default}
+     echo "${TIME} New_Code Error: new code is not exists!!"
+     exit 2
+  fi
+}

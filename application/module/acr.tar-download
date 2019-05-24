@@ -1,0 +1,31 @@
+#!/bin/bash
+Tar_DownLoad_Code () {
+   local Tar_File_Num=`ls -l ${Tar_Code_Dir_Default}|wc -l`
+   if [ "${Tar_File_Num}" -gt 1 ];then
+      # 获取文件的方式是通过时间戳的方式，取得最近上传的文件
+      local Tar_File_Name=`ls -lrt ${Tar_Code_Dir_Default}|grep 'tar.gz'|awk 'END{print $9}'`
+      # 判断状态文件内容
+      if [ `cat ${Status_Dir_Default}/${Unzip_Status_FileName_Default}` -eq 1 ];then
+         echo "Unzip Tar-code Failed on the Last time!!!"
+         sleep 1
+      fi
+      # 写状态文件
+      echo "1" >${Status_Dir_Default}/${Unzip_Status_FileName_Default}
+      # 判断temp目录是否有文件，如果有就清空
+      local Temp_File_Num=`ls -l ${Temp_Dir_Default}|wc -l`
+      if [ "${Temp_File_Num}" -gt 1 ];then
+         rm -rf ${Temp_File_Num}/* >/dev/null 2>&1
+      fi
+      # 解压缩文件到temp目录
+      cd ${Tar_Code_Dir_Default}
+      tar xf ${Tar_File_Name} -C ${Temp_Dir_Default}/
+      # 写状态和日志文件，打印屏幕提示
+      echo "${TIME} ${Tar_File_Name} Tar-Code download is successfull!!!" >>${Log_Dir_Default}/${Messages_Name_Default}
+      echo "0" >${Status_Dir_Default}/${Unzip_Status_FileName_Default}
+      echo "${TIME} ${Tar_File_Name} Tar-Code download is successfull!!!"
+   else
+      echo "${TIME} Tar-Code is not exists!!!!" >>${Log_Dir_Default}/${Error_Name_Default}
+      echo "${TIME} Tar-Code is not exists!!!!"
+      exit 2
+   fi
+}
